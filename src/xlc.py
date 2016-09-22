@@ -13,7 +13,7 @@ from os import walk
 import re
 import sh
 import xml.etree.cElementTree as ET
-
+from metadata import FileMetadata
 
 class XSPFFile(object):
 
@@ -47,7 +47,8 @@ class XSPFFile(object):
                     re.match('(.*).m4a',file) != None or
                     re.match('(.*).mpg',file) != None or
                     re.match('(.*).aiff',file) != None or
-                    re.match('(.*).wav',file) != None):
+                    re.match('(.*).wav',file) != None or
+                    re.match('(.*).flac',file) != None):
 
                     files = files + [short_path+file]
 
@@ -58,38 +59,50 @@ class XSPFFile(object):
         
         self.files = recursive_scanner(self.library_path, "")
 
-    def generate_playlist(self, html_conform=True):
+    def generate_playlist(self, html_conform=False):
         for musicfile in self.files:
             track = ET.SubElement(self.tracklist, "track")
             location = ET.SubElement(track, "location")
 
             target_file = self.target_path + musicfile 
+            info = FileMetadata(self.library_path + musicfile, musicfile)
 
             if html_conform:
                 location.text = target_file.replace(" ", "%20")
                 location.text = location.text.replace("#", "%23")
             else:
-                location.text = target_file.replace(" ", "\\ ")
-
+                location.text = target_file.replace(" ", " ")
 
             title = ET.SubElement(track, "title")
             creator = ET.SubElement(track, "creator")
             album = ET.SubElement(track, "album")
 
 
-            title_text = re.sub("(.*)\/","",musicfile)
+            title.text = info.title
+            creator.text = info.artist
+            album.text = info.album
 
-            title_text = re.sub("\.mp3","",title_text)
-            title_text = re.sub("\.m4a","",title_text)
-            title_text = re.sub("\.wav","",title_text)
+            einfo = ET.SubElement(track, "info")
+            einfo.text = str(info.type)
 
-            title.text = title_text
+            if hasattr(info, "genre") and  info.genre:
+                genre = ET.SubElement(track, "genre")
+                genre.text = str(info.genre)
+
+            if hasattr(info, "bitrate") and info.bitrate:
+                bitrate = ET.SubElement(track, "bitrate")
+                bitrate.text = str(info.bitrate)
+
+            if hasattr(info, "length") and info.length:
+                length = ET.SubElement(track, "duration")
+                length.text = str(info.length)
+
             # raw_info = re.sub(network_path,"",musicfile)
-            info = re.split("\/",musicfile)
-            creator.text = info[0]
+            #info = re.split("\/",musicfile)
+            #creator.text = info[0]
             # check if album available
-            if len(info) > 2:
-                album.text = info[1]
+            #if len(info) > 2:
+            #    album.text = info[1]
 
 
 def main():
@@ -100,6 +113,7 @@ def main():
                         help='target path of the resulting xspf playlist')
     parser.add_argument('--target_path', type=str,
                         help='file path to be used inside the xspf file for referencing')
+    parser.add_argument('--html', help='use html conform location strings')
     args = parser.parse_args()
 
     if args.target_path is None:
@@ -109,7 +123,7 @@ def main():
     print("Scanning library folder for music files")
     xspf.generate_file_list()
     print("Generating Playlist File")
-    xspf.generate_playlist()
+    xspf.generate_playlist(html_conform=args.html)
 
     tree = ET.ElementTree(xspf.playlist)
     tree.write(args.xspf_file,encoding="UTF-8")

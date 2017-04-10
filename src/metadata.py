@@ -2,10 +2,14 @@ import mutagen
 import mutagen.id3 as id3
 import re
 
+
 class FileMetadata:
+    """aquire metadata from supported file types"""
+
 
     def __init__(self, filename, musicfile):
 
+        #required attributes
         self.title = None
         self.artist = None
         self.album = None
@@ -15,14 +19,17 @@ class FileMetadata:
         try:
             self.file = mutagen.File(filename)
            
+            #get bitrate if not flac
             if self.type != "flac":
                 self.bitrate = self.file.info.bitrate
             
+            # check for track duration
             if hasattr(self.file.info, 'length'):
                 self.length = int(self.file.info.length*1000)
             else:
                 self.length = ""
 
+            # load ID3 tags in case of mp3
             if self.type == "mp3":
                 # check for ID3 tags
                 id3_title = id3.ID3.get(self.file, 'TIT2')
@@ -40,9 +47,16 @@ class FileMetadata:
                 id3_genre = id3.ID3.get(self.file, 'TCON')
                 if id3_genre:
                     self.genre = id3_genre.text[0]
-            
+
+                id3_tracknumber = id3.ID3.get(self.file, 'TRCK')
+                if id3_tracknumber:
+                    try:
+                        self.tracknumber = int(re.split("/", id3_tracknumber.text[0])[0])
+                    except ValueError:
+                        self.tracknumber = 0
+
+            #check for itunes tags if m4a
             elif self.type == "m4a":
-                #check for itunes tags
                 m4a_title = self.file.get('©nam')
                 if m4a_title:
                     self.title = m4a_title[0]
@@ -58,6 +72,10 @@ class FileMetadata:
                 m4a_genre = self.file.get('©gen')
                 if m4a_genre:
                     self.genre = m4a_genre[0]
+                
+                m4a_tracknumber = self.file.get('trkn')
+                if m4a_tracknumber:
+                    self.tracknumber = m4a_tracknumber[0][0]
             
             elif self.type == "flac":
                 #check for flac elements
@@ -80,6 +98,7 @@ class FileMetadata:
         except Exception:
             pass
 
+        # if no information available, generate from file path
         if not self.title:
             title_text = re.sub("(.*)\/","",musicfile)
             title_text = re.sub("\.mp3","",title_text)

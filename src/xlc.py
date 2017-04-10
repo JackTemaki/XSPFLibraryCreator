@@ -30,6 +30,7 @@ class XSPFFile(object):
 
         self.tracklist = ET.SubElement(self.playlist, "trackList")
 
+        self.num_tracks = 0
 
     def generate_file_list(self):
         
@@ -51,6 +52,7 @@ class XSPFFile(object):
                     re.match('(.*).flac',file) != None):
 
                     files = files + [short_path+file]
+                    self.num_tracks += 1
 
             for directory in d:
                 files.extend(recursive_scanner(base_path, short_path+directory+"/"))
@@ -60,7 +62,10 @@ class XSPFFile(object):
         self.files = recursive_scanner(self.library_path, "")
 
     def generate_playlist(self, html_conform=False):
+        count = 0
         for musicfile in self.files:
+            count += 1
+            print("File %i of %i" % (count, self.num_tracks), end='\r')
             track = ET.SubElement(self.tracklist, "track")
             location = ET.SubElement(track, "location")
 
@@ -97,6 +102,10 @@ class XSPFFile(object):
                 length = ET.SubElement(track, "duration")
                 length.text = str(info.length)
 
+            if hasattr(info, "tracknumber") and info.tracknumber:
+                tracknumber = ET.SubElement(track, "trackNum")
+                tracknumber.text = str(info.tracknumber)
+
             # raw_info = re.sub(network_path,"",musicfile)
             #info = re.split("\/",musicfile)
             #creator.text = info[0]
@@ -106,7 +115,9 @@ class XSPFFile(object):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='XSPF Library Creator')
+    parser = argparse.ArgumentParser(description="XSPF Library Creator",
+                                     usage='python3 xlc.py --target_path http://name:password@server.hoster.org/music/ --html HTML "/path/to/MUSIC/" ~/Desktop/archive.xspf')
+
     parser.add_argument('library_path', type=str, 
                         help='file path to the music library folder')
     parser.add_argument('xspf_file', type=str, 

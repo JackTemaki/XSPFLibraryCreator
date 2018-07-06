@@ -11,6 +11,7 @@ As the script was originally designed to create a playlist for streaming music f
 Assuming you run a web-server where files are located in /var/www/music/ and your server runs under http://server.domain.com, the command would be
 
 .. code-block:: sh
+
     python3 xspflibrarycreator--target_path http://server.domain.com/music/ --html /var/www/music/ libraryplaylist.xspf
 
 Depending on the size of the playlist, a lot of music players are not capable of reading such big playlist files.

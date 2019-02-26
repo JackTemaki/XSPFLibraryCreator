@@ -12,7 +12,7 @@ Assuming you run a web-server where files are located in /var/www/music/ and you
 
 .. code-block:: sh
 
-    python3 xspflibrarycreator--target_path http://server.domain.com/music/ --html /var/www/music/ libraryplaylist.xspf
+    python3 xspflibrarycreator --target_path http://server.domain.com/music/ --html /var/www/music/ libraryplaylist.xspf
 
 Depending on the size of the playlist, a lot of music players are not capable of reading such big playlist files.
 The recommended player is Clementine, also it works also fine with VLC.

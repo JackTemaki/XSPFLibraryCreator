@@ -104,6 +104,10 @@ class FileMetadata:
                 flac_genre = self.file.get('genre')
                 if flac_genre:
                     self.genre = flac_genre[0]
+                
+                flac_tracknumber = self.file.get('tracknumber')
+                if flac_tracknumber:
+                    self.tracknumber = flac_tracknumber[0]
 
         except Exception:
             pass
